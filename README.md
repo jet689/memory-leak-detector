@@ -1,15 +1,12 @@
 Yet another C/C++ header only Memory leak detector library for programs using basic allocators like 
 `malloc`, `calloc`, `realloc` and `free`.
 
-
-
-
-**warning** *enabling LEAK_MEM_DYNAMIC could potentially lead to garbage data as it uses malloc and realloc which can be filled with garbage data, so do not enable unless you are comfortable with that possibility* (although if you are it rocks)
 ## Features
 
 1. Detect any memory leak and tell the exact line and filename where the allocation was done.
 2. Warn if any `NULL` value is tried to free.
 3. Detect and warn if try to free a already deallocated pointer.
+4. dynamically increased max allocation count
 
 ## Platform supported
 
@@ -63,14 +60,12 @@ Memory leak at example.c:8 (120 bytes)
 Memory leak at example.c:11 (80 bytes)
 ==============================
 ```
-**warning** *enabling LEAK_MEM_DYNAMIC could potentially lead to garbage data as it uses malloc and realloc which can be filled with garbage data, so do not enable unless you are comfortable with that possibility* (although if you are it rocks)
-- There are two modes in the header. The define for it is LEAK_MEM_DYNAMIC. With it defined the amount of allocations at once it can handle starts at LEAK_MEM_START_SIZE and goes up by LEAK_MEM_INCREMENT_SIZE. With it turned off it supports the number of allocations defined by LEAK_MEM_SIZE.
+- There are two modes in the header. The define for it is LEAK_MEM_DYNAMIC. With it defined the maximum number of allocations at once it can handle starts at LEAK_MEM_START_SIZE and goes up by LEAK_MEM_INCREMENT_SIZE. With it turned off it supports up to the number of allocations defined by LEAK_MEM_SIZE.
 ## TODO
 
 - Write test.
 - Try to figure out if it is possible to implement all these feature with same verbosity in `shim` so that this library can be used to test existing program without editing a single line of code. By implementing so we can use the magic of `LD_PRELOAD` environment variable to lead it dynamically to intercept default allocator.
 - Decrease size of mem when allocations drop to save memory.
-- make all dynamic aspects use a calloc style command to ensure non corrupt data
 - Decrease amount of searching for _delete because it is o(n) and searches the entire array
 ## Contributions
 Any advice, improvement or bug fix is welcome. Just make a PR.
