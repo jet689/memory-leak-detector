@@ -12,7 +12,7 @@ extern "C"
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
-#define LEAK_MEM_DYNAMIC
+// #define LEAK_MEM_DYNAMIC
 #ifdef LEAK_MEM_DYNAMIC
     #define LEAK_MEM_START_SIZE 1000
     #define LEAK_MEM_INCREMENT_SIZE 1000
