@@ -78,6 +78,9 @@ static bool _insert(void *ptr, size_t size, int line, char *file) {
     }else{
         #ifdef LEAK_MEM_DYNAMIC
             memoryData.mem=memCatchAlloc(realloc(memoryData.mem,sizeof(Mem)*(LEAK_MEM_SIZE+LEAK_MEM_INCREMENT_SIZE)));
+            for(int i=LEAK_MEM_START_SIZE;i<LEAK_MEM_START_SIZE+LEAK_MEM_INCREMENT_SIZE;i++){
+                memoryData.mem[i].address=0;
+            }
             LEAK_MEM_SIZE+=LEAK_MEM_INCREMENT_SIZE;
             // printf("memory reallocated\n");
             goto insert_to_mem;
@@ -144,6 +147,9 @@ void init() {
         // printf("initializing...\n");
         #ifdef LEAK_MEM_DYNAMIC
             memoryData.mem=(Mem*)memCatchAlloc(malloc(sizeof(Mem)*LEAK_MEM_START_SIZE));
+            for(int i=0;i<LEAK_MEM_START_SIZE;i++){
+                memoryData.mem[i].address=0;
+            }
         #endif
         atexit(mem_at_exit);
         initialized = true;
