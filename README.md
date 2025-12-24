@@ -7,6 +7,7 @@ Yet another C/C++ header only Memory leak detector library for programs using ba
 2. Warn if any `NULL` value is tried to free.
 3. Detect and warn if try to free a already deallocated pointer.
 4. dynamically increased max allocation count
+5. collapsed output
 
 ## Platform supported
 
@@ -37,8 +38,12 @@ int main() {
     char *d = realloc(c, 15); // Here memory will be free first
     free(d);                  // then allocated so 1 free will add here also
 
-    // TOTAL --> 120 + 10 * 8 = 200 bytes Leaked
-    //       --> 5 allocations
+    char *e;
+    for(int i = 0; i < 5; i++) {
+        e = malloc(100);
+    } // --> LEAK (5 * 100)
+    // TOTAL --> 120 + 10 * 8 +5*100 = 700 bytes Leaked
+    //       --> 10 allocations
     //       --> 3 free
 
     return EXIT_SUCCESS;
@@ -49,15 +54,16 @@ int main() {
 ```bash
 root:~leak-detector$ ./example 
 /*========= SUMMARY =========*/
-  Total allocations      5  
+  Total allocations      10  
   Total Free             3  
-  Total Memory allocated 325 bytes 
+  Total Memory allocated 825 bytes 
   Total Memory freed     125 bytes 
-  Memory Leaked          200 bytes 
+  Memory Leaked          700 bytes 
 
 /*===== DETAILED REPORT =====*/
-Memory leak at example.c:8 (120 bytes)
-Memory leak at example.c:11 (80 bytes)
+(1)Memory leak at example.c:8 (120 bytes)
+(1)Memory leak at example.c:11 (80 bytes)
+(5)Memory leak at example.c:20 ((5)100 bytes=500 bytes)
 ==============================
 ```
 - There are two modes in the header. The define for it is LEAK_MEM_DYNAMIC. With it defined the maximum number of allocations at once it can handle starts at LEAK_MEM_START_SIZE and goes up by LEAK_MEM_INCREMENT_SIZE. With it turned off it supports up to the number of allocations defined by LEAK_MEM_SIZE.
