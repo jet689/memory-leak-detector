@@ -19,7 +19,7 @@ extern "C"
     uint32_t LEAK_MEM_SIZE=LEAK_MEM_START_SIZE;
     
 #else
-    #define LEAK_MEM_SIZE 1
+    #define LEAK_MEM_SIZE 1000
 #endif
 #define _leak_warn(file, line, msg) \
     printf("WARNING:: (%s:%d) %s\n", file, line, msg)
