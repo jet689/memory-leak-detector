@@ -12,11 +12,20 @@ extern "C"
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
-
-#define LEAK_MEM_SIZE 1000
+#define LEAK_MEM_DYNAMIC
+#ifdef LEAK_MEM_DYNAMIC
+    #define LEAK_MEM_START_SIZE 1000
+    #define LEAK_MEM_INCREMENT_SIZE 1000
+    uint32_t LEAK_MEM_SIZE=LEAK_MEM_START_SIZE;
+    
+#else
+    #define LEAK_MEM_SIZE 1
+#endif
 #define _leak_warn(file, line, msg) \
     printf("WARNING:: (%s:%d) %s\n", file, line, msg)
-
+#undef malloc
+#undef realloc
+#undef free
 static bool initialized = false;
 
 typedef struct {
@@ -27,7 +36,14 @@ typedef struct {
 } Mem;
 
 static struct MemData {
-    Mem mem[LEAK_MEM_SIZE];
+    #ifdef LEAK_MEM_DYNAMIC
+    
+        Mem *mem;
+
+    #else
+        
+        Mem mem[LEAK_MEM_SIZE];
+    #endif
     uint32_t current;
     uint32_t allocations;
     uint32_t free;
@@ -35,9 +51,20 @@ static struct MemData {
     size_t total_freed;
 } memoryData;
 
+void* memCatchAlloc(void *p){
+    if(p==NULL){
+        printf("WARNING::Memory allocation for leak.h failed");
+        exit(EXIT_FAILURE);
+    }
+    return p;
+}
+
 static bool _insert(void *ptr, size_t size, int line, char *file) {
     uint32_t i;
     const size_t address = (size_t)ptr;
+    #ifdef LEAK_MEM_DYNAMIC
+    insert_to_mem:
+    #endif
     if ((i = memoryData.current) < LEAK_MEM_SIZE) {
         memoryData.mem[i].address = address;
         memoryData.mem[i].size = size;
@@ -49,7 +76,15 @@ static bool _insert(void *ptr, size_t size, int line, char *file) {
         memoryData.total_allocated += size;
         return true;
     }else{
-        printf("LEAK_MEM_SIZE too low\n");
+        #ifdef LEAK_MEM_DYNAMIC
+            memoryData.mem=memCatchAlloc(realloc(memoryData.mem,sizeof(Mem)*(LEAK_MEM_SIZE+LEAK_MEM_INCREMENT_SIZE)));
+            LEAK_MEM_SIZE+=LEAK_MEM_INCREMENT_SIZE;
+            // printf("memory reallocated\n");
+            goto insert_to_mem;
+        #else
+            _leak_warn(file,line,"LEAK_MEM_SIZE too low, allocate less memory or increase LEAK_MEM_SIZE");
+            exit(EXIT_FAILURE);
+        #endif
     }
     return false;
 }
@@ -61,7 +96,7 @@ static uint8_t _delete(void *ptr) {
     const size_t address = (size_t)ptr;
 
     if (ptr != NULL) {
-        for (int i=0; i<LEAK_MEM_SIZE; i++) {
+        for (uint32_t i=0; i<LEAK_MEM_SIZE; i++) {
             if (address == memoryData.mem[i].address) {
                 memoryData.mem[i].address = 0;
 
@@ -87,7 +122,7 @@ void _generate_report() {
     if (memoryData.total_freed == memoryData.total_allocated) return;
     printf("\n/*===== DETAILED REPORT =====*/\n");
 
-    for (int i=0; i<LEAK_MEM_SIZE; i++) {
+    for (uint32_t i=0; i<LEAK_MEM_SIZE; i++) {
         if (memoryData.mem[i].address != 0) {
             printf("Memory leak at %s:%d (%zu bytes)\n", 
                 memoryData.mem[i].file,
@@ -98,10 +133,19 @@ void _generate_report() {
     printf("==============================\n");
 }
 
+void mem_at_exit() {
+    _generate_report();
+    #ifdef LEAK_MEM_DYNAMIC
+        free(memoryData.mem);
+    #endif
+}
 void init() {
     if (!initialized) {
         // printf("initializing...\n");
-        atexit(_generate_report);
+        #ifdef LEAK_MEM_DYNAMIC
+            memoryData.mem=(Mem*)memCatchAlloc(malloc(sizeof(Mem)*LEAK_MEM_START_SIZE));
+        #endif
+        atexit(mem_at_exit);
         initialized = true;
     }
 }
