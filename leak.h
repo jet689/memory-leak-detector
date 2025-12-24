@@ -1,3 +1,4 @@
+// if unexplained double frees happen change LEAK_MEM_SIZE, at some point it would be good to make a dynamic mode where it allocates more memory for its self
 #ifndef __LEAK_DETECTOR_H_
 #define __LEAK_DETECTOR_H_
 
@@ -78,16 +79,16 @@ void _generate_report() {
     printf("/*========= SUMMARY =========*/\n");
     printf("  Total allocations      %d  \n", memoryData.allocations);
     printf("  Total Free             %d  \n", memoryData.free);
-    printf("  Total Memory allocated %lu bytes \n", memoryData.total_allocated);
-    printf("  Total Memory freed     %lu bytes \n", memoryData.total_freed);
-    printf("  Memory Leaked          %lu bytes \n", memoryData.total_allocated - memoryData.total_freed);
+    printf("  Total Memory allocated %zu bytes \n", memoryData.total_allocated);
+    printf("  Total Memory freed     %zu bytes \n", memoryData.total_freed);
+    printf("  Memory Leaked          %zu bytes \n", memoryData.total_allocated - memoryData.total_freed);
 
     if (memoryData.total_freed == memoryData.total_allocated) return;
     printf("\n/*===== DETAILED REPORT =====*/\n");
 
     for (int i=0; i<LEAK_MEM_SIZE; i++) {
         if (memoryData.mem[i].address != 0) {
-            printf("Memory leak at %s:%d (%lu bytes)\n", 
+            printf("Memory leak at %s:%d (%zu bytes)\n", 
                 memoryData.mem[i].file,
                 memoryData.mem[i].line,
                 memoryData.mem[i].size);
@@ -136,7 +137,10 @@ void *_realloc(void *ptr, size_t size, char *file, int line) {
     if (ptr == NULL) {
         _leak_warn(file, line, "Tried to free a 'NULL' pointer");
     }
-
+    if (!_delete(ptr)) {
+        _leak_warn(file, line, "Double free detected");
+        exit(EXIT_FAILURE);
+    }
     void *new_ptr = realloc(ptr, size);
 
     if (new_ptr == NULL) {
@@ -144,10 +148,7 @@ void *_realloc(void *ptr, size_t size, char *file, int line) {
         return ptr;
     }
 
-    if (!_delete(ptr)) {
-        _leak_warn(file, line, "Double free detected");
-        exit(EXIT_FAILURE);
-    }
+
     _insert(new_ptr, size, line, file);
 
     return new_ptr;
@@ -157,12 +158,12 @@ void _free(void *ptr, char *file, int line) {
     if (ptr == NULL) {
         _leak_warn(file, line, "Tried to free a 'NULL' pointer");
     }
-
-    free(ptr);
     if (!_delete(ptr)) {
         _leak_warn(file, line, "Double free detected");
         exit(EXIT_FAILURE);
     }
+    
+    free(ptr);
 }
 
 // Redefine allocator functions
