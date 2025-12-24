@@ -48,6 +48,8 @@ static bool _insert(void *ptr, size_t size, int line, char *file) {
         memoryData.allocations++;
         memoryData.total_allocated += size;
         return true;
+    }else{
+        printf("LEAK_MEM_SIZE too low\n");
     }
     return false;
 }
