@@ -4,7 +4,7 @@ Yet another C/C++ header only Memory leak detector library for programs using ba
 
 
 
-**warning** *enabling LEAK_MEM_DYNAMIC could potentially lead to corrupt data as it uses malloc and realloc which can be filled with garbage data, so do not enable unless you are comfortable with that possibility* (although if you are it rocks)
+**warning** *enabling LEAK_MEM_DYNAMIC could potentially lead to garbage data as it uses malloc and realloc which can be filled with garbage data, so do not enable unless you are comfortable with that possibility* (although if you are it rocks)
 ## Features
 
 1. Detect any memory leak and tell the exact line and filename where the allocation was done.
@@ -63,7 +63,7 @@ Memory leak at example.c:8 (120 bytes)
 Memory leak at example.c:11 (80 bytes)
 ==============================
 ```
-**warning** *enabling LEAK_MEM_DYNAMIC could potentially lead to corrupt data as it uses malloc and realloc which can be filled with garbage data, so do not enable unless you are comfortable with that possibility* (although if you are it rocks)
+**warning** *enabling LEAK_MEM_DYNAMIC could potentially lead to garbage data as it uses malloc and realloc which can be filled with garbage data, so do not enable unless you are comfortable with that possibility* (although if you are it rocks)
 - There are two modes in the header. The define for it is LEAK_MEM_DYNAMIC. With it defined the amount of allocations at once it can handle starts at LEAK_MEM_START_SIZE and goes up by LEAK_MEM_INCREMENT_SIZE. With it turned off it supports the number of allocations defined by LEAK_MEM_SIZE.
 ## TODO
 
