@@ -14,7 +14,7 @@ extern "C"
 #include <string.h>
 // #define LEAK_MEM_DYNAMIC
 #ifdef LEAK_MEM_DYNAMIC
-    #define LEAK_MEM_START_SIZE 1000
+    #define LEAK_MEM_START_SIZE 2000
     #define LEAK_MEM_INCREMENT_SIZE 1000
     uint32_t LEAK_MEM_SIZE=LEAK_MEM_START_SIZE;
     
