@@ -13,9 +13,6 @@ I developed and tested this program in `wsl` having ubuntu 20 installed and also
 so may be this program works well for other operating systems.
 
 In case you get any error using this in your system please considering making an issue.
-## advice
-
-if unexplained double frees happen increase LEAK_MEM_SIZE
 
 
 ## Usage
@@ -62,13 +59,12 @@ Memory leak at example.c:8 (120 bytes)
 Memory leak at example.c:11 (80 bytes)
 ==============================
 ```
-
+- There are two modes in the header. The define for it is LEAK_MEM_DYNAMIC. With it defined the amount of allocations at once it can handle starts at LEAK_MEM_START_SIZE and goes up by LEAK_MEM_INCREMENT_SIZE. With it turned off it supports the number of allocations defined by LEAK_MEM_SIZE.
 ## TODO
 
 - Write test.
 - Try to figure out if it is possible to implement all these feature with same verbosity in `shim` so that this library can be used to test existing program without editing a single line of code. By implementing so we can use the magic of `LD_PRELOAD` environment variable to lead it dynamically to intercept default allocator.
-- Add a method of dynamically increasing size of Mem to remove the need for LEAK_MEM_SIZE and possible errors
-
+- Decrease size of mem when allocations drop to save memory.
 ## Contributions
 Any advice, improvement or bug fix is welcome. Just make a PR.
 
