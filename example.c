@@ -15,8 +15,12 @@ int main() {
     char *d = realloc(c, 15); // Here memory will be free first
     free(d);                  // then allocated so 1 free will add here also
 
-    // TOTAL --> 120 + 10 * 8 = 200 bytes Leaked
-    //       --> 5 allocations
+    char *e;
+    for(int i = 0; i < 5; i++) {
+        e = malloc(100);
+    } // --> LEAK (5 * 100)
+    // TOTAL --> 120 + 10 * 8 +5*100 = 700 bytes Leaked
+    //       --> 10 allocations
     //       --> 3 free
 
     return EXIT_SUCCESS;

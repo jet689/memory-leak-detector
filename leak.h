@@ -113,7 +113,24 @@ static uint8_t _delete(void *ptr) {
     memoryData.free++;
     return false;
 }
-
+typedef struct {
+        uint32_t instances;
+        char file[255];
+        uint32_t line;
+        size_t size;
+    } memCollapser;
+void showMemoryLeak(memCollapser collapser) {
+    
+    printf("(%d)Memory leak at %s:%d ",collapser.instances+1
+        ,collapser.file
+        ,collapser.line
+        );
+    if(collapser.instances>0){
+        printf("((%d)%zu bytes=%zu bytes)\n",collapser.instances+1,collapser.size,collapser.size*(size_t)(collapser.instances+1));
+    }else{
+        printf("(%zu bytes)\n",collapser.size);
+    }
+}
 void _generate_report() {
     printf("/*========= SUMMARY =========*/\n");
     printf("  Total allocations      %d  \n", memoryData.allocations);
@@ -124,14 +141,31 @@ void _generate_report() {
 
     if (memoryData.total_freed == memoryData.total_allocated) return;
     printf("\n/*===== DETAILED REPORT =====*/\n");
-
+    memCollapser collapser;
+    char j=0;
     for (uint32_t i=0; i<LEAK_MEM_SIZE; i++) {
+        // printf("%d",strcmp(collapser.file,memoryData.mem[i].file));
         if (memoryData.mem[i].address != 0) {
-            printf("Memory leak at %s:%d (%zu bytes)\n", 
-                memoryData.mem[i].file,
-                memoryData.mem[i].line,
-                memoryData.mem[i].size);
+            if(j==0){
+                collapser.instances=0;
+                strcpy(collapser.file,memoryData.mem[i].file);
+                collapser.line=memoryData.mem[i].line;
+                collapser.size=memoryData.mem[i].size;
+                j=1;
+            }
+            else if(strcmp(collapser.file,memoryData.mem[i].file)==0 && collapser.line==memoryData.mem[i].line && collapser.size==memoryData.mem[i].size){
+                collapser.instances+=1;
+            }else{
+
+                showMemoryLeak(collapser);
+                collapser.instances=0;
+                strcpy(collapser.file,memoryData.mem[i].file);
+                collapser.line=memoryData.mem[i].line;
+                collapser.size=memoryData.mem[i].size;
         }
+    }}
+    if(j!=0){ 
+        showMemoryLeak(collapser);
     }
     printf("==============================\n");
 }
