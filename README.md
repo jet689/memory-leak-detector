@@ -65,6 +65,7 @@ Memory leak at example.c:11 (80 bytes)
 - Write test.
 - Try to figure out if it is possible to implement all these feature with same verbosity in `shim` so that this library can be used to test existing program without editing a single line of code. By implementing so we can use the magic of `LD_PRELOAD` environment variable to lead it dynamically to intercept default allocator.
 - Decrease size of mem when allocations drop to save memory.
+- Decrease amount of searching for _delete because it is o(n) and searches the entire array (also hypothetically with the malloc it could have bad data that results in incorrect outputs)
 ## Contributions
 Any advice, improvement or bug fix is welcome. Just make a PR.
 
