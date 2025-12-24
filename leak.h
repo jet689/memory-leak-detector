@@ -1,4 +1,3 @@
-// if unexplained double frees happen change LEAK_MEM_SIZE, at some point it would be good to make a dynamic mode where it allocates more memory for its self
 #ifndef __LEAK_DETECTOR_H_
 #define __LEAK_DETECTOR_H_
 
