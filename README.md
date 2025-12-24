@@ -1,5 +1,9 @@
 Yet another C/C++ header only Memory leak detector library for programs using basic allocators like 
 `malloc`, `calloc`, `realloc` and `free`.
+
+
+
+
 **warning** *enabling LEAK_MEM_DYNAMIC could potentially lead to corrupt data as it uses malloc and realloc which can be filled with garbage data, so do not enable unless you are comfortable with that possibility* (although if you are it rocks)
 ## Features
 
