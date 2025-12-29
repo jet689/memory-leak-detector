@@ -12,20 +12,25 @@ extern "C"
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
+
+//undefine if you wish to use with set size.
 #define LEAK_MEM_DYNAMIC
+
 #ifdef LEAK_MEM_DYNAMIC
-    #define LEAK_MEM_START_SIZE 500
-    #define LEAK_MEM_INCREMENT_SIZE 500
-    uint32_t LEAK_MEM_SIZE=LEAK_MEM_START_SIZE;
-    
+#define LEAK_MEM_START_SIZE 500
+#define LEAK_MEM_INCREMENT_SIZE 500
+uint32_t LEAK_MEM_SIZE=LEAK_MEM_START_SIZE;
 #else
-    #define LEAK_MEM_SIZE 1000
+#define LEAK_MEM_SIZE 1000
 #endif
+
 #define _leak_warn(file, line, msg) \
     printf("WARNING:: (%s:%d) %s\n", file, line, msg)
+
 #undef malloc
 #undef realloc
 #undef free
+
 static bool initialized = false;
 
 typedef struct {
@@ -36,14 +41,12 @@ typedef struct {
 } Mem;
 
 static struct MemData {
-    #ifdef LEAK_MEM_DYNAMIC
-    
-        Mem *mem;
+#ifdef LEAK_MEM_DYNAMIC
+    Mem *mem;
+#else
+    Mem mem[LEAK_MEM_SIZE];
+#endif
 
-    #else
-        
-        Mem mem[LEAK_MEM_SIZE];
-    #endif
     uint32_t current;
     uint32_t allocations;
     uint32_t free;
@@ -51,7 +54,7 @@ static struct MemData {
     size_t total_freed;
 } memoryData;
 
-void* memCatchAlloc(void *p){
+void* mem_catch_alloc(void *p){
     if(p==NULL){
         printf("WARNING::Memory allocation for leak.h failed");
         exit(EXIT_FAILURE);
@@ -62,9 +65,11 @@ void* memCatchAlloc(void *p){
 static bool _insert(void *ptr, size_t size, int line, char *file) {
     uint32_t i;
     const size_t address = (size_t)ptr;
-    #ifdef LEAK_MEM_DYNAMIC
+    
+#ifdef LEAK_MEM_DYNAMIC
     insert_to_mem:
-    #endif
+#endif
+    
     if ((i = memoryData.current) < LEAK_MEM_SIZE) {
         memoryData.mem[i].address = address;
         memoryData.mem[i].size = size;
@@ -76,18 +81,22 @@ static bool _insert(void *ptr, size_t size, int line, char *file) {
         memoryData.total_allocated += size;
         return true;
     }else{
-        #ifdef LEAK_MEM_DYNAMIC
-            memoryData.mem=memCatchAlloc(realloc(memoryData.mem,sizeof(Mem)*(LEAK_MEM_SIZE+LEAK_MEM_INCREMENT_SIZE)));
-            for(int i=LEAK_MEM_SIZE;i<LEAK_MEM_SIZE+LEAK_MEM_INCREMENT_SIZE;i++){
-                memoryData.mem[i].address=0;
-            }
-            LEAK_MEM_SIZE+=LEAK_MEM_INCREMENT_SIZE;
-            // printf("memory reallocated\n");
-            goto insert_to_mem;
-        #else
-            _leak_warn(file,line,"LEAK_MEM_SIZE too low, allocate less memory or increase LEAK_MEM_SIZE");
-            exit(EXIT_FAILURE);
-        #endif
+#ifdef LEAK_MEM_DYNAMIC
+        memoryData.mem=mem_catch_alloc(
+                realloc(
+                    memoryData.mem,sizeof(Mem)
+                     *(LEAK_MEM_SIZE+LEAK_MEM_INCREMENT_SIZE)
+            )
+        );
+        for(uint32_t i=LEAK_MEM_SIZE;i<LEAK_MEM_SIZE+LEAK_MEM_INCREMENT_SIZE;i++){
+             memoryData.mem[i].address=0;
+        }
+        LEAK_MEM_SIZE+=LEAK_MEM_INCREMENT_SIZE;
+        goto insert_to_mem;
+#else
+        _leak_warn(file,line,"LEAK_MEM_SIZE too low, allocate less memory or increase LEAK_MEM_SIZE");
+        exit(EXIT_FAILURE);
+#endif
     }
     return false;
 }
@@ -119,14 +128,19 @@ typedef struct {
         uint32_t line;
         size_t size;
     } memCollapser;
-void showMemoryLeak(memCollapser collapser) {
+void show_memory_leak(memCollapser collapser) {
     
-    printf("(%d)Memory leak at %s:%d ",collapser.instances+1
-        ,collapser.file
-        ,collapser.line
+    printf("(%d)Memory leak at %s:%d ",
+        collapser.instances+1,
+        collapser.file,
+        collapser.line
         );
     if(collapser.instances>0){
-        printf("((%d)%zu bytes=%zu bytes)\n",collapser.instances+1,collapser.size,collapser.size*(size_t)(collapser.instances+1));
+        printf("((%d)%zu bytes=%zu bytes)\n",
+            collapser.instances+1,
+            collapser.size,
+            collapser.size*(size_t)(collapser.instances+1)
+            );
     }else{
         printf("(%zu bytes)\n",collapser.size);
     }
@@ -144,7 +158,6 @@ void _generate_report() {
     memCollapser collapser;
     char j=0;
     for (uint32_t i=0; i<LEAK_MEM_SIZE; i++) {
-        // printf("%d",strcmp(collapser.file,memoryData.mem[i].file));
         if (memoryData.mem[i].address != 0) {
             if(j==0){
                 collapser.instances=0;
@@ -157,7 +170,7 @@ void _generate_report() {
                 collapser.instances+=1;
             }else{
 
-                showMemoryLeak(collapser);
+                show_memory_leak(collapser);
                 collapser.instances=0;
                 strcpy(collapser.file,memoryData.mem[i].file);
                 collapser.line=memoryData.mem[i].line;
@@ -165,26 +178,26 @@ void _generate_report() {
         }
     }}
     if(j!=0){ 
-        showMemoryLeak(collapser);
+        show_memory_leak(collapser);
     }
     printf("==============================\n");
 }
 
 void mem_at_exit() {
     _generate_report();
-    #ifdef LEAK_MEM_DYNAMIC
-        free(memoryData.mem);
-    #endif
+#ifdef LEAK_MEM_DYNAMIC
+    free(memoryData.mem);
+#endif
 }
 void init() {
     if (!initialized) {
         // printf("initializing...\n");
-        #ifdef LEAK_MEM_DYNAMIC
-            memoryData.mem=(Mem*)memCatchAlloc(malloc(sizeof(Mem)*LEAK_MEM_START_SIZE));
-            for(int i=0;i<LEAK_MEM_START_SIZE;i++){
-                memoryData.mem[i].address=0;
-            }
-        #endif
+#ifdef LEAK_MEM_DYNAMIC
+        memoryData.mem=(Mem*)mem_catch_alloc(malloc(sizeof(Mem)*LEAK_MEM_START_SIZE));
+        for(int i=0;i<LEAK_MEM_START_SIZE;i++){
+            memoryData.mem[i].address=0;
+        }
+#endif
         atexit(mem_at_exit);
         initialized = true;
     }
