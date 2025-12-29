@@ -72,7 +72,7 @@ root:~leak-detector$ ./example
 - Write test.
 - Try to figure out if it is possible to implement all these feature with same verbosity in `shim` so that this library can be used to test existing program without editing a single line of code. By implementing so we can use the magic of `LD_PRELOAD` environment variable to lead it dynamically to intercept default allocator.
 - Decrease size of mem when allocations drop to save memory.
-- Decrease amount of searching for _delete because it is o(n) and searches the entire array
+- Decrease amount of searching for _delete because it is o(n) and searches the entire array. (preferably a hash table, as there have been instances of _delete making programs 60x slower do to slow frees, and large allocation counts, and this problem only gets larger with more allocations)
 ## Contributions
 Any advice, improvement or bug fix is welcome. Just make a PR.
 
